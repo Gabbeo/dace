@@ -11,6 +11,7 @@ from dace.config import Config
 from dace.frontend.common import op_impl
 from dace.frontend.common import op_repository as oprepo
 from dace.frontend.python import astutils
+from dace.frontend.python.astutils import ASTFindReplace
 from dace.frontend.python.astutils import ExtNodeVisitor, ExtNodeTransformer
 from dace.frontend.python.astutils import rname
 from dace.graph import nodes
@@ -3123,16 +3124,12 @@ class ProgramVisitor(ExtNodeVisitor):
             
             # Change transient names
             # TODO: This is temporary until SDFG calls become functions.
-            max_num = 0
-            offset = max(self.sdfg._temp_transients, sdfg._temp_transients)
             for arrname, array in sdfg.arrays.items():
                 if array.transient and arrname[:5] == '__tmp':
-                    num = int(arrname[5:])
-                    max_num = max(max_num, num)
-                    num += offset
-                    sdfg.replace(arrname, f"__tmp{num}")
-            sdfg._temp_transients = max_num + 1
-            self.sdfg._temp_transients = max_num + 1
+                    if int(arrname[5:]) < self.sdfg._temp_transients:
+                        new_name = sdfg.temp_data_name()
+                        sdfg.replace(arrname, new_name)
+            self.sdfg._temp_transients = sdfg._temp_transients
 
             slice_state = None
             output_slices = set()
@@ -3204,6 +3201,12 @@ class ProgramVisitor(ExtNodeVisitor):
                         self, node, 'Array nodes cannot be '
                         'passed as scalars to nested SDFG '
                         '(passing "%s" as "%s")' % (aname, arg))
+            old_annotations = copy.deepcopy(func.f.__annotations__)
+            for kw in node.keywords:
+                key = kw.arg
+                value = self._parse_function_arg(kw.value)
+                sdfg.replace(key, value)
+            func.f.__annotations__ = old_annotations
             nsdfg = state.add_nested_sdfg(sdfg, self.sdfg, inputs.keys(),
                                           outputs.keys())
             self._add_dependencies(state, nsdfg, None, None, inputs, outputs)
