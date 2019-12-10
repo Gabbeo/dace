@@ -350,6 +350,21 @@ class SDFG(OrderedDiGraph):
                     raise FileExistsError('"%s" already exists in SDFG' % new)
                 d[new] = d[old]
                 del d[old]
+        
+        def replace_shape_strides(arr, old, new):
+            oldsym = dace.symbolic.pystr_to_symbolic(old)
+            if hasattr(arr, 'shape'):
+                arr.shape = [
+                    dim.subs(oldsym, new)
+                    if dace.symbolic.issymbolic(dim) else dim
+                    for dim in arr.shape
+                ]
+            if hasattr(arr, 'strides'):
+                arr.strides = [
+                    dim.subs(oldsym, new)
+                    if dace.symbolic.issymbolic(dim) else dim
+                    for dim in arr.strides
+                ]
 
         if name == new_name:
             return
@@ -358,13 +373,17 @@ class SDFG(OrderedDiGraph):
         replace_dict(self._arrays, name, new_name)
         replace_dict(self._symbols, name, new_name)
 
+        # Replace in shapes of arrays
+        for _, arr in self._arrays.items():
+            replace_shape_strides(arr, name, new_name)
+
         # Replace in inter-state edges
         for edge in self.edges():
             replace_dict(edge.data.assignments, name, new_name)
             for k, v in edge.data.assignments.items():
                 edge.data.assignments[k] = v.replace(name, new_name)
             condition = CodeProperty.to_string(edge.data.condition)
-            edge.data.condition = condition.replace(name, new_name)
+            edge.data.condition = condition.replace(name, str(new_name))
             # for k, v in edge.data.condition.items():
             #     edge.data.condition[k] = v.replace(name, new_name)
 
