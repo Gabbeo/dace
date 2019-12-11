@@ -3129,7 +3129,8 @@ class ProgramVisitor(ExtNodeVisitor):
                     if int(arrname[5:]) < self.sdfg._temp_transients:
                         new_name = sdfg.temp_data_name()
                         sdfg.replace(arrname, new_name)
-            self.sdfg._temp_transients = sdfg._temp_transients
+            self.sdfg._temp_transients = max(self.sdfg._temp_transients,
+                                             sdfg._temp_transients)
 
             slice_state = None
             output_slices = set()
@@ -3201,12 +3202,14 @@ class ProgramVisitor(ExtNodeVisitor):
                         self, node, 'Array nodes cannot be '
                         'passed as scalars to nested SDFG '
                         '(passing "%s" as "%s")' % (aname, arg))
-            old_annotations = copy.deepcopy(func.f.__annotations__)
+            if isinstance(func, DaceProgram):
+                old_annotations = copy.deepcopy(func.f.__annotations__)
             for kw in node.keywords:
                 key = kw.arg
                 value = self._parse_function_arg(kw.value)
                 sdfg.replace(key, value)
-            func.f.__annotations__ = old_annotations
+            if isinstance(func, DaceProgram):
+                func.f.__annotations__ = old_annotations
             nsdfg = state.add_nested_sdfg(sdfg, self.sdfg, inputs.keys(),
                                           outputs.keys())
             self._add_dependencies(state, nsdfg, None, None, inputs, outputs)
