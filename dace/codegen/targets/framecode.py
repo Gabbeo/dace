@@ -1,4 +1,4 @@
-from typing import Set, Tuple
+from typing import Optional, Set, Tuple
 
 import collections
 import dace
@@ -83,7 +83,8 @@ class DaCeCodeGenerator(object):
         # Write constants
         self.generate_constants(sdfg, global_stream)
 
-        global_stream.write(sdfg.global_code, sdfg)
+        for sd in sdfg.all_sdfgs_recursive():
+            global_stream.write(sd.global_code, sd)
 
     def generate_header(self, sdfg: SDFG, used_environments: Set[str],
                         global_stream: CodeIOStream,
@@ -617,7 +618,7 @@ DACE_EXPORTED void __dace_exit_%s(%s)
 
     def generate_code(self,
                       sdfg: SDFG,
-                      schedule: dtypes.ScheduleType,
+                      schedule: Optional[dtypes.ScheduleType],
                       sdfg_id: str = ""
                       ) -> Tuple[str, str, Set[TargetCodeGenerator], Set[str]]:
         """ Generate frame code for a given SDFG, calling registered targets'
@@ -637,7 +638,7 @@ DACE_EXPORTED void __dace_exit_%s(%s)
         callsite_stream = CodeIOStream()
 
         # Set default storage/schedule types in SDFG
-        _set_default_schedule_and_storage_types(sdfg, schedule)
+        set_default_schedule_and_storage_types(sdfg, schedule)
 
         is_top_level = sdfg.parent is None
 
@@ -648,12 +649,6 @@ DACE_EXPORTED void __dace_exit_%s(%s)
         for instr in self._dispatcher.instrumentation.values():
             if instr is not None:
                 instr.on_sdfg_begin(sdfg, callsite_stream, global_stream)
-
-        if sdfg.parent is not None:
-            # Nested SDFG
-            symbols_available = sdfg.parent_sdfg.symbols_defined_at(sdfg)
-        else:
-            symbols_available = sdfg.constants
 
         # Allocate outer-level transients
         shared_transients = sdfg.shared_transients()
@@ -989,7 +984,7 @@ DACE_EXPORTED void __dace_exit_%s(%s)
                 self._dispatcher.used_environments)
 
 
-def _set_default_schedule_and_storage_types(sdfg, toplevel_schedule):
+def set_default_schedule_and_storage_types(sdfg, toplevel_schedule):
     """ Sets default storage and schedule types throughout SDFG.
         Replaces `ScheduleType.Default` and `StorageType.Default`
         with the corresponding types according to the parent scope's
