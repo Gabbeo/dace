@@ -1900,6 +1900,15 @@ for (int {mapname}_iter = 0; {mapname}_iter < {mapname}_rng.size(); ++{mapname}_
         use_tmpout = False
         if len(axes) == input_num_dims:
             # Add OpenMP reduction clause if reducing all axes
+            # If the data type is complex number we need to supply a custom
+            # reduction for openmp to compile.
+            if (sdfg.arrays[output_memlet.data].dtype == dtypes.complex64):
+                loop_header = "#pragma omp declare reduction(+:" \
+                    "dace::complex64: omp_out += omp_in)\n" + loop_header
+            if (sdfg.arrays[output_memlet.data].dtype == dtypes.complex128):
+                loop_header = "#pragma omp declare reduction(+:" \
+                    "dace::complex128: omp_out += omp_in)\n" + loop_header
+
             if (redtype != dtypes.ReductionType.Custom
                     and node.schedule == dtypes.ScheduleType.CPU_Multicore):
                 loop_header += " reduction(%s: __tmpout)" % (
