@@ -168,9 +168,29 @@ namespace dace
             return std::sin(a);
         }
         template<typename T>
+        DACE_CONSTEXPR DACE_HDFI T sinh(const T& a)
+        {
+            return std::sinh(a);
+        }
+        template<typename T>
         DACE_CONSTEXPR DACE_HDFI T cos(const T& a)
         {
             return std::cos(a);
+        }
+        template<typename T>
+        DACE_CONSTEXPR DACE_HDFI T cosh(const T& a)
+        {
+            return std::cosh(a);
+        }
+        template<typename T>
+        DACE_CONSTEXPR DACE_HDFI T tan(const T& a)
+        {
+            return std::tan(a);
+        }
+        template<typename T>
+        DACE_CONSTEXPR DACE_HDFI T tanh(const T& a)
+        {
+            return std::tanh(a);
         }
         template<typename T>
         DACE_CONSTEXPR DACE_HDFI T sqrt(const T& a)
