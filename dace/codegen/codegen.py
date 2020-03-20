@@ -33,6 +33,7 @@ def generate_dummy(sdfg) -> str:
         the right types and and guess values for scalars.
     """
     includes = "#include <stdlib.h>\n"
+    includes += "#include <dace/dace.h>\n"
     includes += "extern \"C\" {\n#include \"" + sdfg.name + ".h\"\n}\n\n"
     header = "int main(int argc, char** argv) {\n"
     allocations = ""
