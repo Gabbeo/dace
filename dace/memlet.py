@@ -22,7 +22,7 @@ class Memlet(object):
     """
 
     # Properties
-    veclen = Property(dtype=int, desc="Vector length")
+    veclen = Property(dtype=int, desc="Vector length", default=1)
     num_accesses = SymbolicProperty(default=0)
     subset = SubsetProperty(default=subsets.Range([]))
     other_subset = SubsetProperty(allow_none=True)
@@ -188,14 +188,15 @@ class Memlet(object):
                       debuginfo=debuginfo)
 
     @staticmethod
-    def from_array(dataname, datadesc):
+    def from_array(dataname, datadesc, wcr=None):
         """ Constructs a Memlet that transfers an entire array's contents.
             :param dataname: The name of the data descriptor in the SDFG.
             :param datadesc: The data descriptor object.
+            :param wcr: The conflict resolution lambda.
             @type datadesc: Data.
         """
         range = subsets.Range.from_array(datadesc)
-        return Memlet(dataname, range.num_elements(), range, 1)
+        return Memlet(dataname, range.num_elements(), range, 1, wcr=wcr)
 
     def __hash__(self):
         return hash((self.data, self.num_accesses, self.subset, self.veclen,
