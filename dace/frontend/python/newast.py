@@ -2276,7 +2276,7 @@ class ProgramVisitor(ExtNodeVisitor):
                                 'Indirect accesses not supported in map ranges'
                             )
                         arr = expr.func.__name__
-                        newvar = '__%s_%s%d' % (name, vid, ctr)
+                        newvar = '__%s_%s%d_%s' % (name, vid, ctr, arr)
                         repldict[arr] = newvar
                         # Create memlet
                         args = ','.join([str(a) for a in expr.args])
